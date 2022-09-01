@@ -1,13 +1,17 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 import '../../../Api Call/Get_Audio_Category/get_audio_category_data.dart';
+
 import '../../../dwonload_video.dart';
 import '../../../music.dart';
 import 'package:flutter/src/foundation/key.dart';
 import 'package:flutter/src/widgets/framework.dart';
+
+import '../../../utils/colors.dart';
 
 
 
@@ -24,12 +28,13 @@ class _SiglePersonAudioPlayState extends State<SiglePersonAudioPlay> {
   bool isPlaying = false;
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
+  int? _currentIndex;
 
   void initState() {
 
     audioPlayer.onPlayerStateChanged.listen((state) {
       setState(() {
-        // isPlaying = state = PlayerState.PLAYING;
+
         isPlaying = state == PlayerState.PLAYING;
       });
     });
@@ -58,8 +63,25 @@ class _SiglePersonAudioPlayState extends State<SiglePersonAudioPlay> {
   Widget build(BuildContext context) {
    final singleAudio= Provider.of<SingleAudioDataClass>(context);
     return Scaffold(
-
-      body: singleAudio.loading? Container(child:CircularProgressIndicator(),):
+      appBar: AppBar(
+        backgroundColor: AppColors.appRedColor,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () {
+            //_scaffoldKey.currentState?.openDrawer();
+          },
+          icon: Icon(Icons.arrow_back),
+        ),
+        centerTitle: true,
+        title: Text(
+          "Music",
+          style: TextStyle(
+              fontSize: 18.sp,
+              color: Colors.white,
+              fontWeight: FontWeight.w500),
+        ),
+      ),
+      body: singleAudio.loading? Container(child:Center(child: CircularProgressIndicator()),):
       ListView.builder(
         itemCount:singleAudio.audio!.audio!.data!.length,
        itemBuilder:(context, index){
@@ -71,8 +93,8 @@ class _SiglePersonAudioPlayState extends State<SiglePersonAudioPlay> {
                 Card(
                   elevation: 3,
                   child: Container(
-                    height: 100,
-
+                    height: 60,
+                    width:322,
                     child: Padding(
                       padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -81,16 +103,12 @@ class _SiglePersonAudioPlayState extends State<SiglePersonAudioPlay> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Container(
-                                height: 40,
-                                width: 40,
 
-                              ),
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 5),
                                 child: Container(
                                   height: 40,
-                                  width: 250,
+                                  width: 200,
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -111,74 +129,48 @@ class _SiglePersonAudioPlayState extends State<SiglePersonAudioPlay> {
                                   ),
                                 ),
                               ),
-                              Row(
-                                children: [
-                                  Container(
-                                    height: 40,
-                                    width: 30,
-
-                                    child: IconButton(
-                                      onPressed: () async {
-                                        audioPlayer.setUrl(singleAudio.audio!.audio!.data![index].audioPath!);
-                                        if (isPlaying) {
-                                          await audioPlayer.pause();
-                                        } else {
-                                          await audioPlayer.resume();
-                                        }
-                                      },
-                                      icon: Icon(isPlaying
-                                          ? Icons.pause
-                                          : Icons.play_arrow),
-                                      color: Colors.red,
-                                      iconSize: 30,
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: 10,
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 10),
-                                    child: Container(
-                                      height: 40,
-                                      width: 15,
-                                      child: IconButton(
-                                        icon: Icon(Icons.more_vert),
-                                        onPressed: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) =>
-                                            const DownloadingDialog(),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('${position.inMinutes.floorToDouble()}'),
-                              Expanded(
-                                child: Slider(
-                                  min: 0,
-                                  max: duration.inSeconds.toDouble(),
-                                  value: position.inSeconds.toDouble(),
-                                  onChanged: (value) async {
-                                    final position =
-                                    Duration(seconds: value.toInt());
-                                    await audioPlayer.seek(position);
-
+                              IconButton(
+                                onPressed: () async {
+                                  audioPlayer.setUrl(singleAudio.audio!.audio!.data![index].audioPath!);
+                                  if (isPlaying) {
+                                    await audioPlayer.pause();
+                                    _currentIndex=index;
+                                  } else {
                                     await audioPlayer.resume();
-                                  },
+                                    _currentIndex=index;
+                                  }
+                                },
+                                icon:_currentIndex == index
+                                    ? isPlaying
+                                    ? Icon(
+                                  Icons.pause,
+                                  size: 30,
+                                  color: Colors.red[800],
+                                )
+                                    : Icon(
+                                  Icons.play_arrow,
+                                  size: 30,
+                                  color: Colors.red[800],
+                                )
+                                    : Icon(
+                                  Icons.play_arrow,
+                                  size: 30,
+                                  color: Colors.red[800],
                                 ),
+
                               ),
-                              Text(
-                                  "${duration.inMinutes.floorToDouble() - position.inMinutes.floorToDouble()}"),
+                              IconButton(
+                                icon: Icon(Icons.file_download, color:Colors.redAccent,),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) =>DownloadingDialog(Alink:singleAudio.audio!.audio!.data![index].imgPath!)
+                                  );
+                                },
+                              ),
                             ],
                           ),
+
                         ],
                       ),
                     ),
@@ -187,36 +179,10 @@ class _SiglePersonAudioPlayState extends State<SiglePersonAudioPlay> {
               ],
             ),
           );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            Column(
-            children: [
-              FloatingActionButton(onPressed: (){
-                Navigator.of(context).push(MaterialPageRoute(builder: (builder)=>AudioPage(link:singleAudio.audio!.audio!.data![index].audioPath!,)));
-              })
-            ],
-          );
        },
       
       ),
+
     );
   }
 }
